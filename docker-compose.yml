@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  dataset-image-converter:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: dataset-image-converter
+    container_name: dataset-image-converter
+    environment:
+      LOGGING_LEVEL: "${LOGGING_LEVEL:-DEBUG}"
