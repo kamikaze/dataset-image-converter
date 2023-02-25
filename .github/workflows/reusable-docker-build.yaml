@@ -22,6 +22,11 @@ on:
         required: false
         default: true
         type: boolean
+      ecr-enable:
+        description: Log into Amazon ECR
+        required: false
+        default: false
+        type: boolean
       comment-enable:
         description: Create a PR comment with image tags and labels
         required: false
@@ -96,11 +101,8 @@ permissions:
 
 jobs:
   build-image:
-
     name: Build+Push
-
     runs-on: ubuntu-latest
-
     outputs:
       # only outputs the unique gha- image tag that's unique to each build
       ghcr-tag: ${{ steps.ghcr-tag.outputs.tag }}
