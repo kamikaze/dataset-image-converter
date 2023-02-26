@@ -1,8 +1,12 @@
-FROM public.ecr.aws/lambda/python:3.9
+FROM 720725507314.dkr.ecr.eu-north-1.amazonaws.com/lambda-python-runtime:3.11
 
-COPY src/ ${LAMBDA_TASK_ROOT}
+ARG LAMBDA_TASK_ROOT
+
+WORKDIR ${LAMBDA_TASK_ROOT}
+
 COPY requirements.txt  .
+COPY src/ ${LAMBDA_TASK_ROOT}
 
-RUN  pip3 install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
+RUN pip install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
-CMD [ "dataset_image_converter.lambda" ]
+CMD [ "dataset_image_converter.lambda.handler" ]
