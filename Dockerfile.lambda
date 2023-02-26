@@ -1,4 +1,4 @@
-FROM 720725507314.dkr.ecr.eu-north-1.amazonaws.com/lambda-python-runtime:3.11
+FROM kamikazer/lambda-python-runtime:3.11
 
 ARG LAMBDA_TASK_ROOT
 
