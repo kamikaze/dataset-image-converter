@@ -1,6 +1,5 @@
 import argparse
 import logging
-from pathlib import Path
 from typing import Sequence
 
 from rawpy._rawpy import ColorSpace
@@ -25,7 +24,7 @@ def get_parsed_args():
 
 def main():
     args = get_parsed_args()
-    data_root_path = Path(args.data_root)
+    data_root_path = args.data_root
 
     color_spaces = (
         ColorSpace.sRGB,

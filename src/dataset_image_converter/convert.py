@@ -1,11 +1,12 @@
 import concurrent.futures
 import logging
 import multiprocessing
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Generator, Sequence
 
 import numpy as np
 import rawpy
+from aiofm.protocols.s3 import S3Protocol
 from python3_commons.fs import iter_files
 from rawpy._rawpy import Params, RawPy
 
@@ -23,7 +24,8 @@ def _convert_raw(raw_image: RawPy, storages: Sequence[ImageFileStorage]):
                     median_filter_passes=0, use_camera_wb=True, output_color=color_space, output_bps=bits,
                     no_auto_bright=True
                 )
-                processed_image = np.asarray(raw_image.postprocess(params))
+                processed_image = raw_image.postprocess(params)
+                processed_image = np.asarray(processed_image)
                 storage_dir_name = storage.IMAGE_FILE_EXTENSION
                 color_space_name = str(color_space).split('.')[-1]
 
@@ -33,9 +35,13 @@ def _convert_raw(raw_image: RawPy, storages: Sequence[ImageFileStorage]):
                                    processed_image)
 
 
-def convert_raw_from_s3(raw_image_path: str):
-    # TODO: boto3, s3
-    pass
+def convert_raw_from_s3(raw_image_path: str, storages: Sequence[ImageFileStorage]):
+    protocol = S3Protocol()
+
+    with protocol.open(raw_image_path, 'rb') as f:
+        raw_image = rawpy.imread(f.stream)
+
+    _convert_raw(raw_image, storages)
 
 
 def convert_raw_from_fs(raw_image_path: Path, storages: Sequence[ImageFileStorage]):
@@ -52,12 +58,24 @@ def iter_fs_images(root: Path) -> Generator[Path, None, None]:
     )
 
 
-def convert_raws(root: Path, storages: Sequence[ImageFileStorage]) -> Sequence[str]:
+def iter_s3_images(root: PurePath) -> Generator[PurePath, None, None]:
+    protocol = S3Protocol()
+
+    return (
+        file_path
+        for file_path in protocol.ls(root)
+        if file_path.name.lower().endswith('.arw')
+    )
+
+
+def convert_raws(root: str, storages: Sequence[ImageFileStorage]) -> Sequence[str]:
     filenames = []
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=multiprocessing.cpu_count() * 2) as executor:
-        for image_path in iter_fs_images(root):
-            executor.submit(convert_raw_from_fs, image_path, storages)
+        root = PurePath(root.split('s3://', maxsplit=1)[1])
+
+        for image_path in iter_s3_images(root):
+            executor.submit(convert_raw_from_s3, image_path, storages)
             filenames.append(image_path.name)
 
     return filenames
