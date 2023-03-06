@@ -18,7 +18,6 @@ class ImageFileStorage(ABC):
     SUPPORTED_BPS: tuple[int] = ()
 
     def __init__(self, color_spaces: Sequence):
-        self.s3_protocol = S3Protocol()
         self.color_spaces = color_spaces
 
     def __str__(self):
@@ -35,8 +34,9 @@ class ImageFileStorage(ABC):
 
     def save_image(self, target_dir_path: PurePath, file_name: str, bits: int, color_space: str, image: np.ndarray):
         dst_path = self._get_full_dst_file_path(target_dir_path, file_name, bits, color_space)
+        s3_protocol = S3Protocol()
 
-        with self.s3_protocol.open(dst_path, 'wb') as f:
+        with s3_protocol.open(dst_path, 'wb') as f:
             self._save_image(f, image)
 
         logger.info(f'Saved converted image in: {str(dst_path)}')

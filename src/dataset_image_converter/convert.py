@@ -1,6 +1,7 @@
 import concurrent.futures
 import logging
 import multiprocessing
+from functools import partial
 from pathlib import Path, PurePath
 from typing import Generator, Sequence
 
@@ -16,26 +17,34 @@ logger = logging.getLogger(__name__)
 
 
 def _convert_raw(raw_image: RawPy, raw_image_path: PurePath, storages: Sequence[ImageFileStorage]):
-    for storage in storages:
-        for color_space in storage.color_spaces:
-            for bits in storage.SUPPORTED_BPS:
-                params = Params(
-                    # demosaic_algorithm=DemosaicAlgorithm.DCB, dcb_iterations=1, dcb_enhance=True,
-                    median_filter_passes=0, use_camera_wb=True, output_color=color_space, output_bps=bits,
-                    no_auto_bright=True
-                )
-                processed_image = raw_image.postprocess(params)
-                processed_image = np.asarray(processed_image)
-                storage_dir_name = storage.IMAGE_FILE_EXTENSION
-                color_space_name = str(color_space).split('.')[-1]
+    """
+    Converting input raw image to different storage formats.
+    Extracting all color spaces, so we can process RAW once per color space to save CPU time.
+    """
+    color_spaces = {color_space for storage in storages for color_space in storage.color_spaces}
 
-                logger.info(f'Converting {raw_image_path} to {storage_dir_name}')
+    for color_space in color_spaces:
+        params = Params(
+            # demosaic_algorithm=DemosaicAlgorithm.DCB, dcb_iterations=1, dcb_enhance=True,
+            median_filter_passes=0, use_camera_wb=True, output_color=color_space, output_bps=16,
+            no_auto_bright=True
+        )
+        processed_image = raw_image.postprocess(params)
+        processed_image = np.asarray(processed_image)
 
-                storage.save_image(raw_image_path.parent, raw_image_path.name, bits, color_space_name,
-                                   processed_image)
+        for storage in storages:
+            if color_space in storage.color_spaces:
+                for bits in storage.SUPPORTED_BPS:
+                    storage_dir_name = storage.IMAGE_FILE_EXTENSION
+                    color_space_name = str(color_space).split('.')[-1]
+
+                    logger.info(f'Converting {raw_image_path} to {storage_dir_name}')
+
+                    storage.save_image(raw_image_path.parent, raw_image_path.name, bits, color_space_name,
+                                       processed_image)
 
 
-def convert_raw_from_s3(raw_image_path: PurePath, storages: Sequence[ImageFileStorage]):
+def convert_raw_from_s3(storages: Sequence[ImageFileStorage], raw_image_path: PurePath) -> PurePath:
     protocol = S3Protocol()
 
     with protocol.open(raw_image_path, 'rb') as f:
@@ -43,8 +52,10 @@ def convert_raw_from_s3(raw_image_path: PurePath, storages: Sequence[ImageFileSt
 
     _convert_raw(raw_image, PurePath(raw_image_path), storages)
 
+    return raw_image_path
 
-def convert_raw_from_fs(raw_image_path: Path, storages: Sequence[ImageFileStorage]):
+
+def convert_raw_from_fs(storages: Sequence[ImageFileStorage], raw_image_path: Path):
     raw_image = rawpy.imread(str(raw_image_path))
 
     _convert_raw(raw_image, raw_image_path, storages)
@@ -69,14 +80,11 @@ def iter_s3_images(root: PurePath) -> Generator[PurePath, None, None]:
 
 
 def convert_raws(root: str, storages: Sequence[ImageFileStorage]) -> Sequence[str]:
-    filenames = []
+    root = PurePath(root.split('s3://', maxsplit=1)[1])
+    convert_raw_from_s3_partial = partial(convert_raw_from_s3, storages)
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=multiprocessing.cpu_count() * 2) as executor:
-        root = PurePath(root.split('s3://', maxsplit=1)[1])
-
-        for image_path in iter_s3_images(root):
-            convert_raw_from_s3(image_path, storages)
-            executor.submit(convert_raw_from_s3, image_path, storages)
-            filenames.append(image_path.name)
+    with concurrent.futures.ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()-1) as executor:
+        futures = executor.map(convert_raw_from_s3_partial, iter_s3_images(root))
+        filenames = list(futures)
 
     return filenames
