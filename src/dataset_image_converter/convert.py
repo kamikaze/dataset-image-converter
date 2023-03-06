@@ -16,6 +16,15 @@ from dataset_image_converter.storages import ImageFileStorage
 logger = logging.getLogger(__name__)
 
 
+def _save_image(image: np.ndarray, raw_image_path: PurePath, storage: ImageFileStorage, color_space, bits: int):
+    storage_dir_name = storage.IMAGE_FILE_EXTENSION
+    color_space_name = str(color_space).split('.')[-1]
+
+    logger.info(f'Converting {raw_image_path} to {storage_dir_name}')
+
+    storage.save_image(raw_image_path.parent, raw_image_path.name, bits, color_space_name, image)
+
+
 def _convert_raw(raw_image: RawPy, raw_image_path: PurePath, storages: Sequence[ImageFileStorage]):
     """
     Converting input raw image to different storage formats.
@@ -33,15 +42,17 @@ def _convert_raw(raw_image: RawPy, raw_image_path: PurePath, storages: Sequence[
         processed_image = np.asarray(processed_image)
 
         for storage in storages:
-            if color_space in storage.color_spaces:
-                for bits in storage.SUPPORTED_BPS:
-                    storage_dir_name = storage.IMAGE_FILE_EXTENSION
-                    color_space_name = str(color_space).split('.')[-1]
+            if 16 in storage.SUPPORTED_BPS and color_space in storage.color_spaces:
+                _save_image(processed_image, raw_image_path, storage, color_space, 16)
 
-                    logger.info(f'Converting {raw_image_path} to {storage_dir_name}')
+        processed_image_8bit = (processed_image // 256).astype(np.uint8)
+        del processed_image
 
-                    storage.save_image(raw_image_path.parent, raw_image_path.name, bits, color_space_name,
-                                       processed_image)
+        for storage in storages:
+            if 8 in storage.SUPPORTED_BPS and color_space in storage.color_spaces:
+                _save_image(processed_image_8bit, raw_image_path, storage, color_space, 8)
+
+        del processed_image_8bit
 
 
 def convert_raw_from_s3(storages: Sequence[ImageFileStorage], raw_image_path: PurePath) -> PurePath:
@@ -51,6 +62,8 @@ def convert_raw_from_s3(storages: Sequence[ImageFileStorage], raw_image_path: Pu
         raw_image = rawpy.imread(f.stream)
 
     _convert_raw(raw_image, PurePath(raw_image_path), storages)
+
+    del raw_image
 
     return raw_image_path
 
@@ -83,7 +96,7 @@ def convert_raws(root: str, storages: Sequence[ImageFileStorage]) -> Sequence[st
     root = PurePath(root.split('s3://', maxsplit=1)[1])
     convert_raw_from_s3_partial = partial(convert_raw_from_s3, storages)
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()-1) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
         futures = executor.map(convert_raw_from_s3_partial, iter_s3_images(root))
         filenames = list(futures)
 

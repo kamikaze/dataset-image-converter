@@ -27,21 +27,23 @@ def main():
     data_root_path = args.data_root
 
     color_spaces = (
+        ColorSpace.raw,
         ColorSpace.sRGB,
-        ColorSpace.Adobe,
-        ColorSpace.ACES,
+        # ColorSpace.Adobe,
+        # ColorSpace.ACES,
+        ColorSpace.P3D65,
         ColorSpace.ProPhoto,
         ColorSpace.XYZ,
-        ColorSpace.Wide
+        # ColorSpace.Wide
     )
     storages: Sequence = (
         JPEGImageStorage(quality=100, color_spaces=color_spaces),
-        JPEGImageStorage(quality=75, color_spaces=color_spaces),
-        JPEGImageStorage(quality=50, color_spaces=color_spaces),
-        JPEGImageStorage(quality=25, color_spaces=color_spaces),
-        JPEGImageStorage(quality=10, color_spaces=color_spaces),
-        PNGImageStorage(color_spaces=color_spaces),
-        BMPImageStorage(color_spaces=color_spaces),
+        # JPEGImageStorage(quality=75, color_spaces=color_spaces),
+        # JPEGImageStorage(quality=50, color_spaces=color_spaces),
+        # JPEGImageStorage(quality=25, color_spaces=color_spaces),
+        # JPEGImageStorage(quality=10, color_spaces=color_spaces),
+        # PNGImageStorage(color_spaces=color_spaces),
+        # BMPImageStorage(color_spaces=color_spaces),
         TIFFImageStorage(color_spaces=color_spaces),
         # WebPImageStorage(),
         NumpyZipImageStorage(color_spaces=color_spaces),
