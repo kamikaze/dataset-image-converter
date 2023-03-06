@@ -15,7 +15,7 @@ from dataset_image_converter.storages import ImageFileStorage
 logger = logging.getLogger(__name__)
 
 
-def _convert_raw(raw_image: RawPy, storages: Sequence[ImageFileStorage]):
+def _convert_raw(raw_image: RawPy, raw_image_path: PurePath, storages: Sequence[ImageFileStorage]):
     for storage in storages:
         for color_space in storage.color_spaces:
             for bits in storage.SUPPORTED_BPS:
@@ -29,25 +29,25 @@ def _convert_raw(raw_image: RawPy, storages: Sequence[ImageFileStorage]):
                 storage_dir_name = storage.IMAGE_FILE_EXTENSION
                 color_space_name = str(color_space).split('.')[-1]
 
-                logger.info(f'Converting {str(raw_image_path)} to {storage_dir_name}')
+                logger.info(f'Converting {raw_image_path} to {storage_dir_name}')
 
                 storage.save_image(raw_image_path.parent, raw_image_path.name, bits, color_space_name,
                                    processed_image)
 
 
-def convert_raw_from_s3(raw_image_path: str, storages: Sequence[ImageFileStorage]):
+def convert_raw_from_s3(raw_image_path: PurePath, storages: Sequence[ImageFileStorage]):
     protocol = S3Protocol()
 
     with protocol.open(raw_image_path, 'rb') as f:
         raw_image = rawpy.imread(f.stream)
 
-    _convert_raw(raw_image, storages)
+    _convert_raw(raw_image, PurePath(raw_image_path), storages)
 
 
 def convert_raw_from_fs(raw_image_path: Path, storages: Sequence[ImageFileStorage]):
     raw_image = rawpy.imread(str(raw_image_path))
 
-    _convert_raw(raw_image, storages)
+    _convert_raw(raw_image, raw_image_path, storages)
 
 
 def iter_fs_images(root: Path) -> Generator[Path, None, None]:
@@ -75,6 +75,7 @@ def convert_raws(root: str, storages: Sequence[ImageFileStorage]) -> Sequence[st
         root = PurePath(root.split('s3://', maxsplit=1)[1])
 
         for image_path in iter_s3_images(root):
+            convert_raw_from_s3(image_path, storages)
             executor.submit(convert_raw_from_s3, image_path, storages)
             filenames.append(image_path.name)
 

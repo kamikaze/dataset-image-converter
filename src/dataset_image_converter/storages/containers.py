@@ -1,5 +1,6 @@
+from io import BytesIO
 from pathlib import Path
-from typing import Sequence
+from typing import Sequence, BinaryIO
 
 import imageio as iio
 import numpy as np
@@ -19,8 +20,8 @@ class NumpyZipImageStorage(ImageFileStorage):
     def __str__(self):
         return f'{self.DATASET_SUBDIR_NAME}'
 
-    def _save_image(self, dst_path: Path, image: np.ndarray):
-        np.savez_compressed(dst_path, image)
+    def _save_image(self, uri: str | Path | BytesIO | BinaryIO, image: np.ndarray):
+        np.savez_compressed(uri, image)
 
 
 # class NumpyZipImageStorage(ImageFileStorage):

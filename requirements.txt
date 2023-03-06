@@ -16,7 +16,7 @@
 # scipy==1.0
 #
 
-aiofm==0.0.7
+aiofm==0.0.9
 Cython==0.29.33
 h5py==3.8.0
 # imageio[freeimage,opencv,pillow,pyav]==2.25.1

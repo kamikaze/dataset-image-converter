@@ -1,5 +1,6 @@
+from io import BytesIO
 from pathlib import Path
-from typing import Sequence
+from typing import Sequence, BinaryIO
 
 import imageio as iio
 import numpy as np
@@ -22,12 +23,12 @@ class JPEGImageStorage(ImageFileStorage):
 
     def _get_full_dst_file_path(self, target_dir_path: Path, file_name: str, bits: int, color_space: str):
         dst_dir_path = Path(target_dir_path, f'.{self.IMAGE_FILE_EXTENSION}{str(bits)}{color_space}{self.quality}')
-        dst_dir_path.mkdir(exist_ok=True)
+        # dst_dir_path.mkdir(exist_ok=True)
 
         return Path(dst_dir_path, f'{file_name}.{self.IMAGE_FILE_EXTENSION}')
 
-    def _save_image(self, dst_path: Path, image: np.ndarray):
-        iio.imwrite(dst_path, image, quality=self.quality)
+    def _save_image(self, uri: str | Path | BytesIO | BinaryIO, image: np.ndarray):
+        iio.imwrite(uri, image, format=self.IMAGE_FILE_EXTENSION, quality=self.quality)
 
 
 class PNGImageStorage(ImageFileStorage):
@@ -36,8 +37,8 @@ class PNGImageStorage(ImageFileStorage):
     METADATA_FILE_NAME = 'metadata.json'
     SUPPORTED_BPS = (8, )
 
-    def _save_image(self, dst_path: Path, image: np.ndarray):
-        iio.imwrite(dst_path, image, optimize=True)
+    def _save_image(self, uri: str | Path | BytesIO | BinaryIO, image: np.ndarray):
+        iio.imwrite(uri, image, format=self.IMAGE_FILE_EXTENSION, optimize=True)
 
 
 class BMPImageStorage(ImageFileStorage):
