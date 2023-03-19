@@ -1,10 +1,10 @@
 import concurrent.futures
 import logging
-import multiprocessing
 from functools import partial
 from pathlib import Path, PurePath
 from typing import Generator, Sequence
 
+import colour.io
 import numpy as np
 import rawpy
 from aiofm.protocols.s3 import S3Protocol
@@ -30,6 +30,8 @@ def _convert_raw(raw_image: RawPy, raw_image_path: PurePath, storages: Sequence[
     Converting input raw image to different storage formats.
     Extracting all color spaces, so we can process RAW once per color space to save CPU time.
     """
+    camera_profile = colour.read_LUT('SONY_ILCE-7RM4_iso100_FE_70_200mm_F2.8_GM_OSS_f5.6_daylight.dcp')
+    raw_image = colour.io.apply_LUT(raw_image, camera_profile)
     color_spaces = {color_space for storage in storages for color_space in storage.color_spaces}
 
     for color_space in color_spaces:
@@ -93,11 +95,17 @@ def iter_s3_images(root: PurePath) -> Generator[PurePath, None, None]:
 
 
 def convert_raws(root: str, storages: Sequence[ImageFileStorage]) -> Sequence[str]:
-    root = PurePath(root.split('s3://', maxsplit=1)[1])
-    convert_raw_from_s3_partial = partial(convert_raw_from_s3, storages)
+    if root.startswith('s3://'):
+        root = PurePath(root.split('s3://', maxsplit=1)[1])
+        convert_raw_partial = partial(convert_raw_from_s3, storages)
+        file_iterator = iter_s3_images(root)
+    else:
+        root = Path(root)
+        convert_raw_partial = partial(convert_raw_from_fs, storages)
+        file_iterator = iter_files(root)
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
-        futures = executor.map(convert_raw_from_s3_partial, iter_s3_images(root))
+        futures = executor.map(convert_raw_partial, file_iterator)
         filenames = list(futures)
 
     return filenames

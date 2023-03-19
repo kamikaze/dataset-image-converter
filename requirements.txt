@@ -1,6 +1,5 @@
 # =============================================================================
 # DEPRECATION WARNING:
-#
 # The file `requirements.txt` does not influence the package dependencies and
 # will not be automatically created in the next version of PyScaffold (v4.x).
 #
@@ -17,6 +16,7 @@
 #
 
 aiofm==0.0.18
+colour-science==0.4.2
 Cython==0.29.33
 h5py==3.8.0
 # imageio[freeimage,opencv,pillow,pyav]==2.25.1
@@ -25,4 +25,5 @@ numpy==1.24.2
 pkgconfig==1.5.5
 python3-commons==0.0.9
 rawpy==0.18.0
+urllib3<1.27
 zarr==2.14.2
