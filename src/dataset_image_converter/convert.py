@@ -8,8 +8,10 @@ import colour.io
 import numpy as np
 import rawpy
 from aiofm.protocols.s3 import S3Protocol
+from exif import Image
 from python3_commons.fs import iter_files
 from rawpy._rawpy import Params, RawPy
+from tifffile import TiffFile
 
 from dataset_image_converter.storages import ImageFileStorage
 
@@ -30,8 +32,12 @@ def _convert_raw(raw_image: RawPy, raw_image_path: PurePath, storages: Sequence[
     Converting input raw image to different storage formats.
     Extracting all color spaces, so we can process RAW once per color space to save CPU time.
     """
-    camera_profile = colour.read_LUT('SONY_ILCE-7RM4_iso100_FE_70_200mm_F2.8_GM_OSS_f5.6_daylight.dcp')
-    raw_image = colour.io.apply_LUT(raw_image, camera_profile)
+
+    camera_profile_path = Path(Path(__file__).parent, 'SONY_ILCE-7RM4_iso100_FE_70_200mm_F2.8_GM_OSS_f5.6_daylight.dcp')
+
+    with open(camera_profile_path, 'rb') as f:
+        camera_profile = f.read()
+
     color_spaces = {color_space for storage in storages for color_space in storage.color_spaces}
 
     for color_space in color_spaces:
