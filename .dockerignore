@@ -3,5 +3,6 @@ dist
 .github
 build
 venv
+docs
 *.swp
 **/*.egg-info
