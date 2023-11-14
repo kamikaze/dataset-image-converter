@@ -3,11 +3,10 @@ colour-science==0.4.3
 Cython==3.0.5
 exif==1.6.0
 h5py==3.10.0
-imageio[freeimage,pillow]==2.31.6
-numpy==1.26.1
+imageio[freeimage,pillow]==2.32.0
+numpy==1.26.2
 pkgconfig==1.5.5
-python3-commons==0.2.7
+python3-commons==0.2.11
 rawpy==0.18.1
 tifffile[all]==2023.9.26
-urllib3<1.27
 zarr==2.16.1
