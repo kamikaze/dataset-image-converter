@@ -26,30 +26,32 @@ def main():
     args = get_parsed_args()
     data_root_path = args.data_root
 
-    color_spaces = (
-        ColorSpace.raw,
-        ColorSpace.sRGB,
-        # ColorSpace.Adobe,
-        # ColorSpace.ACES,
-        ColorSpace.P3D65,
-        ColorSpace.ProPhoto,
-        ColorSpace.XYZ,
-        # ColorSpace.Wide
-    )
-    storages: Sequence = (
-        JPEGImageStorage(quality=100, color_spaces=color_spaces),
-        # JPEGImageStorage(quality=75, color_spaces=color_spaces),
-        # JPEGImageStorage(quality=50, color_spaces=color_spaces),
-        # JPEGImageStorage(quality=25, color_spaces=color_spaces),
-        # JPEGImageStorage(quality=10, color_spaces=color_spaces),
-        # PNGImageStorage(color_spaces=color_spaces),
-        # BMPImageStorage(color_spaces=color_spaces),
-        TIFFImageStorage(color_spaces=color_spaces),
-        # WebPImageStorage(),
-        NumpyZipImageStorage(color_spaces=color_spaces),
-        # NumpyMmapImageStorage(),
-        # CupyMmapImageStorage(),
-    )
+    color_spaces = {
+        'raw': ColorSpace.raw,
+        'srgb': ColorSpace.sRGB,
+        # 'adobe': ColorSpace.Adobe,
+        # 'aces': ColorSpace.ACES,
+        'p3d65': ColorSpace.P3D65,
+        'prophoto': ColorSpace.ProPhoto,
+        'xyz': ColorSpace.XYZ,
+        # 'wide': ColorSpace.Wide
+    }
+    storages: Sequence = {
+        'jpeg': (
+            JPEGImageStorage(quality=100, color_spaces=color_spaces),
+            # JPEGImageStorage(quality=75, color_spaces=color_spaces),
+            # JPEGImageStorage(quality=50, color_spaces=color_spaces),
+            # JPEGImageStorage(quality=25, color_spaces=color_spaces),
+            # JPEGImageStorage(quality=10, color_spaces=color_spaces),
+        ),
+        # 'png': (PNGImageStorage(color_spaces=color_spaces), ),
+        # 'bmp': (BMPImageStorage(color_spaces=color_spaces), ),
+        'tiff': (TIFFImageStorage(color_spaces=color_spaces), ),
+        # 'webp': (WebPImageStorage(), ),
+        'numpy_zip': (NumpyZipImageStorage(color_spaces=color_spaces), ),
+        # 'numpy_mmap': (NumpyMmapImageStorage(), ),
+        # 'cupy': (CupyMmapImageStorage(), ),
+    }
 
     convert_raws(data_root_path, storages)
 

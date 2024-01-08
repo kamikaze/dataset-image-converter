@@ -14,7 +14,7 @@ class JPEGImageStorage(ImageFileStorage):
     METADATA_FILE_NAME = 'metadata.json'
     SUPPORTED_BPS = (8, )
 
-    def __init__(self, color_spaces: Sequence, quality: int = 100):
+    def __init__(self, color_spaces: Mapping, quality: int = 100):
         super().__init__(color_spaces)
         self.quality = quality
 

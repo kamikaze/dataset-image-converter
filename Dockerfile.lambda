@@ -1,4 +1,4 @@
-FROM kamikazer/lambda-python-runtime:3.11
+FROM kamikazer/lambda-python-runtime:3.12
 
 ARG LAMBDA_TASK_ROOT
 

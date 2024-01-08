@@ -2,7 +2,7 @@ import concurrent.futures
 import logging
 from functools import partial
 from pathlib import Path, PurePath
-from typing import Generator, Sequence
+from typing import Generator, Sequence, Mapping
 
 import colour.io
 import numpy as np
@@ -27,7 +27,7 @@ def _save_image(image: np.ndarray, raw_image_path: PurePath, storage: ImageFileS
     storage.save_image(raw_image_path.parent, raw_image_path.name, bits, color_space_name, image)
 
 
-def _convert_raw(raw_image: RawPy, raw_image_path: PurePath, storages: Sequence[ImageFileStorage]):
+def _convert_raw(raw_image: RawPy, raw_image_path: PurePath, storages: Mapping[str, Sequence[ImageFileStorage]]):
     """
     Converting input raw image to different storage formats.
     Extracting all color spaces, so we can process RAW once per color space to save CPU time.
@@ -38,7 +38,12 @@ def _convert_raw(raw_image: RawPy, raw_image_path: PurePath, storages: Sequence[
     with open(camera_profile_path, 'rb') as f:
         camera_profile = f.read()
 
-    color_spaces = {color_space for storage in storages for color_space in storage.color_spaces}
+    color_spaces = {
+        color_space
+        for storage_set in storages.values()
+        for storage in storage_set
+        for color_space in storage.color_spaces
+    }
 
     for color_space in color_spaces:
         params = Params(
@@ -49,21 +54,23 @@ def _convert_raw(raw_image: RawPy, raw_image_path: PurePath, storages: Sequence[
         processed_image = raw_image.postprocess(params)
         processed_image = np.asarray(processed_image)
 
-        for storage in storages:
-            if 16 in storage.SUPPORTED_BPS and color_space in storage.color_spaces:
-                _save_image(processed_image, raw_image_path, storage, color_space, 16)
+        for storage_set in storages.values():
+            for storage in storage_set:
+                if 16 in storage.SUPPORTED_BPS and color_space in storage.color_spaces:
+                    _save_image(processed_image, raw_image_path, storage, color_space, 16)
 
         processed_image_8bit = (processed_image // 256).astype(np.uint8)
         del processed_image
 
-        for storage in storages:
-            if 8 in storage.SUPPORTED_BPS and color_space in storage.color_spaces:
-                _save_image(processed_image_8bit, raw_image_path, storage, color_space, 8)
+        for storage_set in storages.values():
+            for storage in storage_set:
+                if 8 in storage.SUPPORTED_BPS and color_space in storage.color_spaces:
+                    _save_image(processed_image_8bit, raw_image_path, storage, color_space, 8)
 
         del processed_image_8bit
 
 
-def convert_raw_from_s3(storages: Sequence[ImageFileStorage], raw_image_path: PurePath) -> PurePath:
+def convert_raw_from_s3(storages: Mapping[str, Sequence[ImageFileStorage]], raw_image_path: PurePath) -> PurePath:
     protocol = S3Protocol()
 
     with protocol.open(raw_image_path, 'rb') as f:
@@ -76,7 +83,7 @@ def convert_raw_from_s3(storages: Sequence[ImageFileStorage], raw_image_path: Pu
     return raw_image_path
 
 
-def convert_raw_from_fs(storages: Sequence[ImageFileStorage], raw_image_path: Path):
+def convert_raw_from_fs(storages: Mapping[str, Sequence[ImageFileStorage]], raw_image_path: Path):
     raw_image = rawpy.imread(str(raw_image_path))
 
     _convert_raw(raw_image, raw_image_path, storages)
@@ -100,7 +107,7 @@ def iter_s3_images(root: PurePath) -> Generator[PurePath, None, None]:
     )
 
 
-def convert_raws(root: str, storages: Sequence[ImageFileStorage]) -> Sequence[str]:
+def convert_raws(root: str, storages: Mapping[str, Sequence[ImageFileStorage]]) -> Sequence[str]:
     if root.startswith('s3://'):
         root = PurePath(root.split('s3://', maxsplit=1)[1])
         convert_raw_partial = partial(convert_raw_from_s3, storages)

@@ -17,7 +17,7 @@ class ImageFileStorage(ABC):
     METADATA_FILE_NAME = 'metadata.json'
     SUPPORTED_BPS: tuple[int] = ()
 
-    def __init__(self, color_spaces: Sequence):
+    def __init__(self, color_spaces: Mapping):
         self.color_spaces = color_spaces
 
     def __str__(self):
