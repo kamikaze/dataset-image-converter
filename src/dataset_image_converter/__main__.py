@@ -1,6 +1,5 @@
 import argparse
 import logging
-from typing import Sequence
 
 from rawpy._rawpy import ColorSpace
 
@@ -36,7 +35,7 @@ def main():
         'xyz': ColorSpace.XYZ,
         # 'wide': ColorSpace.Wide
     }
-    storages: Sequence = {
+    storages = {
         'jpeg': (
             JPEGImageStorage(quality=100, color_spaces=color_spaces),
             # JPEGImageStorage(quality=75, color_spaces=color_spaces),

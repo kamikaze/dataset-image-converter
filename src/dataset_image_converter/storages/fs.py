@@ -1,6 +1,6 @@
 from io import BytesIO
 from pathlib import Path
-from typing import Sequence, BinaryIO
+from typing import Sequence, BinaryIO, Mapping
 
 import imageio as iio
 import numpy as np

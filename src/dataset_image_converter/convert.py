@@ -39,13 +39,13 @@ def _convert_raw(raw_image: RawPy, raw_image_path: PurePath, storages: Mapping[s
         camera_profile = f.read()
 
     color_spaces = {
-        color_space
+        color_space_name: color_space
         for storage_set in storages.values()
         for storage in storage_set
-        for color_space in storage.color_spaces
+        for color_space_name, color_space in storage.color_spaces.items()
     }
 
-    for color_space in color_spaces:
+    for color_space_name, color_space in color_spaces.items():
         params = Params(
             # demosaic_algorithm=DemosaicAlgorithm.DCB, dcb_iterations=1, dcb_enhance=True,
             median_filter_passes=0, use_camera_wb=True, output_color=color_space, output_bps=16,
@@ -56,16 +56,16 @@ def _convert_raw(raw_image: RawPy, raw_image_path: PurePath, storages: Mapping[s
 
         for storage_set in storages.values():
             for storage in storage_set:
-                if 16 in storage.SUPPORTED_BPS and color_space in storage.color_spaces:
-                    _save_image(processed_image, raw_image_path, storage, color_space, 16)
+                if 16 in storage.SUPPORTED_BPS and color_space_name in storage.color_spaces:
+                    _save_image(processed_image, raw_image_path, storage, color_space_name, 16)
 
         processed_image_8bit = (processed_image // 256).astype(np.uint8)
         del processed_image
 
         for storage_set in storages.values():
             for storage in storage_set:
-                if 8 in storage.SUPPORTED_BPS and color_space in storage.color_spaces:
-                    _save_image(processed_image_8bit, raw_image_path, storage, color_space, 8)
+                if 8 in storage.SUPPORTED_BPS and color_space_name in storage.color_spaces:
+                    _save_image(processed_image_8bit, raw_image_path, storage, color_space_name, 8)
 
         del processed_image_8bit
 
@@ -117,7 +117,7 @@ def convert_raws(root: str, storages: Mapping[str, Sequence[ImageFileStorage]]) 
         convert_raw_partial = partial(convert_raw_from_fs, storages)
         file_iterator = iter_files(root)
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=32) as executor:
         futures = executor.map(convert_raw_partial, file_iterator)
         filenames = list(futures)
 
