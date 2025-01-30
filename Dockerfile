@@ -1,4 +1,4 @@
-FROM --platform=$TARGETPLATFORM python:3.12-slim-bookworm as build-image
+FROM --platform=$TARGETPLATFORM python:3.13-slim-bookworm as build-image
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ COPY requirements.txt .
 RUN python3 -m pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements.txt
 
 
-FROM --platform=$TARGETPLATFORM python:3.12-slim-bookworm
+FROM --platform=$TARGETPLATFORM python:3.13-slim-bookworm
 
 ENV PYTHONPATH=/app
 
