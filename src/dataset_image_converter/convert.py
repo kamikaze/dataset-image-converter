@@ -4,14 +4,10 @@ from functools import partial
 from pathlib import Path, PurePath
 from typing import Generator, Sequence, Mapping
 
-import colour.io
 import numpy as np
 import rawpy
-from aiofm.protocols.s3 import S3Protocol
-from exif import Image
 from python3_commons.fs import iter_files
 from rawpy._rawpy import Params, RawPy
-from tifffile import TiffFile
 
 from dataset_image_converter.storages import ImageFileStorage
 

@@ -47,7 +47,7 @@ def main():
         # 'bmp': (BMPImageStorage(color_spaces=color_spaces), ),
         'tiff': (TIFFImageStorage(color_spaces=color_spaces), ),
         # 'webp': (WebPImageStorage(), ),
-        'numpy_zip': (NumpyZipImageStorage(color_spaces=color_spaces), ),
+        # 'numpy_zip': (NumpyZipImageStorage(color_spaces=color_spaces), ),
         # 'numpy_mmap': (NumpyMmapImageStorage(), ),
         # 'cupy': (CupyMmapImageStorage(), ),
     }

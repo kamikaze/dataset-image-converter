@@ -2,11 +2,10 @@ import logging
 from abc import ABC
 from io import BytesIO
 from pathlib import Path, PurePath
-from typing import Sequence, BinaryIO, Mapping
+from typing import BinaryIO, Mapping
 
 import imageio as iio
 import numpy as np
-from aiofm.protocols.s3 import S3Protocol
 
 logger = logging.getLogger(__name__)
 
@@ -24,11 +23,8 @@ class ImageFileStorage(ABC):
     def __str__(self):
         return self.DATASET_SUBDIR_NAME
 
-    def get_s3_client(self) -> S3Protocol:
-        if not self.s3_protocol:
-            self.s3_protocol = S3Protocol()
-
-        return self.s3_protocol
+    def get_s3_client(self):
+        raise NotImplemented
 
     def _get_full_dst_file_path(self, target_dir_path: PurePath, file_name: str, bits: int, color_space: str):
         dst_dir_path = Path(target_dir_path, f'.{self.IMAGE_FILE_EXTENSION}{str(bits)}{color_space}')
