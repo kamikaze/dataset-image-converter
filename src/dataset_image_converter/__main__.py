@@ -26,13 +26,13 @@ def main():
     data_root_path = args.data_root
 
     color_spaces = {
-        'raw': ColorSpace.raw,
+        # 'raw': ColorSpace.raw,
         'srgb': ColorSpace.sRGB,
         # 'adobe': ColorSpace.Adobe,
         # 'aces': ColorSpace.ACES,
-        'p3d65': ColorSpace.P3D65,
-        'prophoto': ColorSpace.ProPhoto,
-        'xyz': ColorSpace.XYZ,
+        # 'p3d65': ColorSpace.P3D65,
+        # 'prophoto': ColorSpace.ProPhoto,
+        # 'xyz': ColorSpace.XYZ,
         # 'wide': ColorSpace.Wide
     }
     storages = {
